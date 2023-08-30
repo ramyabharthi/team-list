@@ -1,0 +1,19 @@
+{% extends "Index.html" %}
+
+{% block content %}
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h2>Edit Student</h2>
+        <form id="editStudentForm" method="post" action="{% url 'update_student' %}">
+            {% csrf_token %}
+            <input type="hidden" id="editId" name="id">
+            <label for="editName">Name:</label>
+            <input type="text" id="editName" name="name" class="form-control"><br>
+            <label for="editAge">Age:</label>
+            <input type="number" id="editAge" name="age" class="form-control"><br>
+            <button type="submit" class="btn btn-custom-yellow">Save Changes</button>
+            <button type="button" class="btn btn-custom-blue" id="editCancelButton">Cancel</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
