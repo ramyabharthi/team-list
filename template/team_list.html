@@ -331,16 +331,52 @@
                     }
                 });
             });
-
             $('#team_lead').on('change', function () {
                 var selectedValues = $(this).val();
 
-                // If team lead is selected, also add them as a team member
+                // Add the selected team leads to team members
                 if (selectedValues) {
-                    $('#team_member').val(selectedValues).trigger('change');
+                    $('#team_member').val(function (_, currentMembers) {
+                        return currentMembers.concat(selectedValues);
+                    }).trigger('change');
                 }
             });
 
+            // When a user is deselected in the "Team Lead(s)" field, also deselect them in the "Team Member(s)" field
+            $("#team_lead").on("change", function () {
+                var deselectedUsers = $(this).data("deselectedUsers") || [];
+
+                // Get the currently selected users in the "Team Lead(s)" field
+                var selectedTeamLeads = $(this).val() || [];
+
+                // Determine which users were deselected
+                var newlyDeselected = deselectedUsers.filter(user => !selectedTeamLeads.includes(user));
+
+                // Deselect the newly deselected users in the "Team Member(s)" field
+                $("#team_member").val($("#team_member").val().filter(user => !newlyDeselected.includes(user))).trigger('change');
+
+                // Update the list of deselected users for the next change event
+                $(this).data("deselectedUsers", selectedTeamLeads);
+
+            });
+
+            // Keep track of the initially selected team members
+            var initialTeamMembers = [];
+
+            // Store the initial selected values in the "Team Member(s)" field
+            $("#team_member").on("select2:select", function (e) {
+                initialTeamMembers = $(this).val();
+            }).on("select2:unselect", function (e) {
+                var deselectedValue = e.params.data.id;
+
+                // Check if the deselected value is also selected in "Team Lead(s)"
+                if ($("#team_lead").val() && $("#team_lead").val().includes(deselectedValue)) {
+                    // Deselect the same value in "Team Lead(s)"
+                    $("#team_lead").val(function (_, currentLeads) {
+                        return currentLeads.filter(user => user !== deselectedValue);
+                    }).trigger('change');
+                }
+            });
 
             $(".delete-team-button").on("click", function () {
                 const teamId = $(this).data("teamid");
@@ -392,6 +428,23 @@
 
 
 
+            // Keep track of the initially selected team members
+            var initialTeamMembers = [];
+
+            // Store the initial selected values in the "Team Member(s)" field
+            $("#edit_team_member").on("select2:select", function (e) {
+                initialTeamMembers = $(this).val();
+            }).on("select2:unselect", function (e) {
+                var deselectedValue = e.params.data.id;
+
+                // Check if the deselected value is also selected in "Team Lead(s)"
+                if ($("#edit_team_lead").val() && $("#edit_team_lead").val().includes(deselectedValue)) {
+                    // Deselect the same value in "Team Lead(s)"
+                    $("#edit_team_lead").val(function (_, currentLeads) {
+                        return currentLeads.filter(user => user !== deselectedValue);
+                    }).trigger('change');
+                }
+            });
             $(".edit-team-button").on("click", function () {
                 const teamId = $(this).data("teamid");
 
@@ -422,7 +475,7 @@
                     },
                 });
             });
-            
+
             $('#updateTeamButton').click(function () {
                 var csrftoken = getCookie('csrftoken');
                 $.ajax({
