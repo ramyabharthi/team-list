@@ -141,9 +141,9 @@ def team_report(request):
     total_teams = Team.objects.count()
     total_members = TeamMember.objects.count()
     total_leads = TeamMember.objects.filter(is_lead=True).count()
-    total_users = User.objects.count()
+    total_users = TeamMember.objects.values('member').distinct().count()
 
-    max_leads_in_single_team = Team.objects.annotate(num_leads=Count('teammember__is_lead')).aggregate(max_leads=Max('num_leads'))['max_leads']
+    max_leads_in_single_team = Team.objects.annotate(num_leads=Count('teammember', filter=Q(teammember__is_lead=True))).aggregate(max_leads=Max('num_leads'))['max_leads']
     max_members_in_single_team = Team.objects.annotate(num_members=Count('teammember__member')).aggregate(max_members=Max('num_members'))['max_members']
 
     context = {
