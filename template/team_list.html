@@ -407,7 +407,16 @@
                 }
             });
 
+            $('#edit_team_lead').on('change', function () {
+                var selectedValues = $(this).val();
 
+                // Add the selected edit team leads to edit team members
+                if (selectedValues) {
+                    $('#edit_team_member').val(function (_, currentMembers) {
+                        return currentMembers.concat(selectedValues);
+                    }).trigger('change');
+                }
+            });
 
             // When a user is deselected in the "Team Lead(s)" field, also deselect them in the "Team Member(s)" field
             $("#edit_team_lead").on("change", function () {
