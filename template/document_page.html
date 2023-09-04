@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- Add Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+    <style>
+        /* Custom CSS for the document page */
+        body {
+            background-color: lightseagreen;
+        }
+
+        .container {
+            background-color: white;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .add-document-button {
+            background-color: lightseagreen;
+            color: white;
+        }
+
+        /* Custom styles for the "Choose File" button */
+        #documentFile {
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+
+
+        /* Custom styles for the "Upload" button */
+        #uploadDocumentButton {
+            background-color: #FF9B9B;
+            color: white;
+        }
+
+        .download-icon {
+            color: #F6546A;
+
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container mt-4">
+        <h2 class="mb-4">Document Page</h2>
+        <button id="addDocumentButton" class="btn btn-primary add-document-button">Add Document</button>
+
+        <!-- Modal for adding documents -->
+        <div class="modal fade" id="addDocumentModal" tabindex="-1" role="dialog"
+            aria-labelledby="addDocumentModalLabel" aria-hidden="true" style="display: none;">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addDocumentModalLabel">Add Document</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="file" name="document_file" id="documentFile" accept=".pdf, .doc, .txt">
+                        <div id="selectedFileName"></div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="button" id="uploadDocumentButton" class="btn btn-primary">Upload</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <table class="table table-bordered mt-4">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Size</th>
+                    <th>Uploaded Date</th>
+                    <th>Download</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for document in documents %}
+                <tr>
+                    <td>{{ document.document_name }}</td>
+                    <td>{{ document.document_type }}</td>
+                    <td>{{ document.document_size }}</td>
+                    <td>{{ document.uploaded_date }}</td>
+                    <!-- Updated template code -->
+                    <td>
+                        <a href="{% url 'download_document' document.document_name %}"
+                            download="{{ document.document_name }}">
+                            <i class="fas fa-file-download download-icon"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Add this at the end of document_page.html, after jQuery and Bootstrap JS are included -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = jQuery.trim(cookies[i]);
+                    // Check if this cookie name starts with the csrftoken prefix
+                    if (cookie.substring(0, 10) === 'csrftoken=') {
+                        cookieValue = decodeURIComponent(cookie.substring(10));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        $(document).ready(function () {
+            $("#addDocumentButton").click(function () {
+                $("#addDocumentModal").modal("show");
+            });
+            $("#documentFile").change(function () {
+                var fileInput = document.getElementById("documentFile");
+                var selectedFileName = "";
+
+                if (fileInput.files.length > 0) {
+                    selectedFileName = fileInput.files[0].name;
+                }
+
+                // Update the content of the selectedFileName div
+                $("#selectedFileName").text(selectedFileName);
+            });
+
+            $("#uploadDocumentButton").click(function () {
+                var fileInput = document.getElementById("documentFile");
+                var file = fileInput.files[0];
+
+                if (file) {
+                    var formData = new FormData();
+                    formData.append("document_file", file);
+
+                    $.ajax({
+                        url: "{% url 'upload_document' %}",
+                        type: "POST",
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        headers: {
+                            // Include the CSRF token in the request headers
+                            "X-CSRFToken": getCookie("csrftoken"),
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                location.reload();
+                            } else {
+                                alert("Upload failed.");
+                            }
+                        },
+                        error: function () {
+                            alert("Error uploading the document.");
+                        },
+                    });
+                } else {
+                    alert("Please choose a valid file.");
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

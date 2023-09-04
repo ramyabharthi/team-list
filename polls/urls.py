@@ -10,5 +10,8 @@ urlpatterns = [
     path('get_team_data/', views.get_team_data, name='get_team_data'),
     path('update_team/', views.update_team, name='update_team'),
     path('team_report/', views.team_report, name='team_report'),
+    path('documents/', views.document_page, name='document_page'),
+    path('document/upload/', views.upload_document, name='upload_document'),
+    path('document/download/<str:file_name>/', views.download_document, name='download_document'),
 
 ]

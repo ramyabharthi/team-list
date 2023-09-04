@@ -37,3 +37,12 @@ class TeamMember(models.Model):
     
      def __str__(self):      
           return self.team
+
+class Documents(models.Model):    
+     document_name = models.CharField(max_length=100)  # name of the file
+     document_type = models.CharField(max_length=10)  # type of the file, only accept pdf, doc, txt
+     document_size = models.PositiveIntegerField()
+     uploaded_date = models.DateTimeField(auto_now_add=True)  # automatically adds the current date on insert
+
+     def __str__(self):
+          return self.document_name

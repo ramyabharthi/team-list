@@ -2,11 +2,20 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
-from .models import Team, TeamMember
+from .models import Team, TeamMember, Documents
 from django.contrib.auth.models import User
 from django.db.models import Q  
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Max
+from django.utils import timezone
+from django.conf import settings
+from urllib.parse import quote
+from django.core.exceptions import PermissionDenied
+from django.http import FileResponse, HttpResponseNotFound
+from pathlib import Path
+import shutil
+
+import os
 
 
 def add_team(request):
@@ -156,6 +165,50 @@ def team_report(request):
     }
 
     return render(request, 'team_report.html', context)
+
+def document_page(request):
+    documents = Documents.objects.all()
+    return render(request, 'document_page.html', {'documents': documents})
+    
+
+def upload_document(request):
+    if request.method == 'POST':
+        document_file = request.FILES.get('document_file')
+        if document_file:
+            try:
+                document = Documents(
+                    document_name=document_file.name,
+                    document_type=document_file.name.split('.')[-1],
+                    document_size=document_file.size,
+                    uploaded_date=timezone.now(),  
+                )
+                document.save()
+                return JsonResponse({'success': True})
+            except Exception as e:
+                print(e)
+    return JsonResponse({'success': False})
+
+
+def download_document(request, file_name):
+    file_directory = Path("/home/oem/Downloads")
+    file_path = file_directory / file_name
+
+    if file_path.is_file():
+        # store the downloaded file
+        target_directory = Path("/home/oem/Projects/workshop/fileupload")
+
+        target_file_path = target_directory / file_name
+
+        # Copy the file from the download directory to the target directory
+        shutil.copyfile(file_path, target_file_path)
+
+        response = FileResponse(open(file_path, 'rb'), content_type='application/octet-stream')
+        response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+
+        return response
+    else:
+        return HttpResponseNotFound("File not found")
+
 
 
 def index(request):
