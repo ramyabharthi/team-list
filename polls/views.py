@@ -14,6 +14,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import FileResponse, HttpResponseNotFound
 from pathlib import Path
 import shutil
+from django.core.files.storage import FileSystemStorage
 
 import os
 
@@ -175,39 +176,50 @@ def upload_document(request):
     if request.method == 'POST':
         document_file = request.FILES.get('document_file')
         if document_file:
-            try:
-                document = Documents(
-                    document_name=document_file.name,
-                    document_type=document_file.name.split('.')[-1],
-                    document_size=document_file.size,
-                    uploaded_date=timezone.now(),  
-                )
-                document.save()
-                return JsonResponse({'success': True})
-            except Exception as e:
-                print(e)
+            # Get the file extension in lowercase
+            file_extension = os.path.splitext(document_file.name)[-1].lower()
+            
+            # Check if the file extension is allowed (pdf, txt, or doc)
+            allowed_extensions = ['.pdf', '.txt', '.doc']
+            if file_extension in allowed_extensions:
+                try:
+                    # Create a Documents instance and save it to the database
+                    document = Documents(
+                        document_name=document_file.name,
+                        document_type=file_extension[1:],  # Remove the leading dot
+                        document_size=document_file.size,
+                        uploaded_date=timezone.now(),
+                    )
+                    document.save()
+
+                    # Save the file using Django's FileSystemStorage
+                    fs = FileSystemStorage(location='fileupload/')  # Specify the folder
+                    filename = fs.save(document_file.name, document_file)
+
+                    return JsonResponse({'success': True})
+                except Exception as e:
+                    print(e)
+    
     return JsonResponse({'success': False})
 
 
 def download_document(request, file_name):
-    file_directory = Path("/home/oem/Downloads")
-    file_path = file_directory / file_name
+    try:
+        # Construct the file path within the "fileupload" folder
+        file_path = os.path.join('fileupload', file_name)
 
-    if file_path.is_file():
-        # store the downloaded file
-        target_directory = Path("/home/oem/Projects/workshop/fileupload")
-
-        target_file_path = target_directory / file_name
-
-        # Copy the file from the download directory to the target directory
-        shutil.copyfile(file_path, target_file_path)
-
-        response = FileResponse(open(file_path, 'rb'), content_type='application/octet-stream')
-        response['Content-Disposition'] = f'attachment; filename="{file_name}"'
-
-        return response
-    else:
+        # Check if the file exists
+        if os.path.exists(file_path):
+            # Serve the file as a response
+            response = FileResponse(open(file_path, 'rb'), content_type='application/octet-stream')
+            response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+            return response
+        else:
+            return HttpResponseNotFound("File not found")
+    except Exception as e:
+        print(e)
         return HttpResponseNotFound("File not found")
+
 
 
 
