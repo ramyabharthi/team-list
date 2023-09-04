@@ -10,9 +10,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 
     <style>
-        /* Custom CSS for the document page */
+        @import url('https://fonts.googleapis.com/css2?family=Amatic+SC:wght@700&family=Rajdhani&display=swap');
+
         body {
             background-color: lightseagreen;
+        }
+
+        h2 {
+            font-family: 'Amatic SC', cursive;
+            font-size: 45px;
+            color: black;
+
         }
 
         .container {
@@ -27,7 +35,6 @@
             color: white;
         }
 
-        /* Custom styles for the "Choose File" button */
         #documentFile {
             color: white;
             padding: 10px;
@@ -47,7 +54,7 @@
         }
 
         .delete-icon {
-            color: navy;
+            color: lightseagreen;
         }
 
         .btn-confirm-delete {
@@ -91,6 +98,7 @@
                 </div>
             </div>
         </div>
+        <div id="errorMessage" class="text-danger"></div>
 
         <table class="table table-bordered mt-4">
             <thead>
@@ -182,40 +190,53 @@
 
                 $("#selectedFileName").text(selectedFileName);
             });
-
             $("#uploadDocumentButton").click(function () {
                 var fileInput = document.getElementById("documentFile");
                 var file = fileInput.files[0];
 
                 if (file) {
-                    var formData = new FormData();
-                    formData.append("document_file", file);
+                    var fileExtension = file.name.split('.').pop().toLowerCase();
+                    var allowedExtensions = ['pdf', 'doc', 'txt'];
 
-                    $.ajax({
-                        url: "{% url 'upload_document' %}",
-                        type: "POST",
-                        data: formData,
-                        processData: false,
-                        contentType: false,
-                        headers: {
-                            // Include the CSRF token in the request headers
-                            "X-CSRFToken": getCookie("csrftoken"),
-                        },
-                        success: function (response) {
-                            if (response.success) {
-                                location.reload();
-                            } else {
-                                alert("Upload failed.");
-                            }
-                        },
-                        error: function () {
-                            alert("Error uploading the document.");
-                        },
-                    });
+                    if (allowedExtensions.indexOf(fileExtension) === -1) {
+                        // Display an error message if the file type is not allowed
+                        $("#errorMessage").text("File type not allowed. Please choose a valid file.");
+
+                        // Close the modal dialog for adding a document
+                        $("#addDocumentModal").modal("hide");
+                    } else {
+                        // Clear any previous error messages
+                        $("#errorMessage").text("");
+
+                        var formData = new FormData();
+                        formData.append("document_file", file);
+
+                        $.ajax({
+                            url: "{% url 'upload_document' %}",
+                            type: "POST",
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            headers: {
+                                "X-CSRFToken": getCookie("csrftoken"),
+                            },
+                            success: function (response) {
+                                if (response.success) {
+                                    location.reload();
+                                } else {
+                                    alert("Upload failed.");
+                                }
+                            },
+                            error: function () {
+                                alert("Error uploading the document.");
+                            },
+                        });
+                    }
                 } else {
-                    alert("Please choose a valid file.");
+                    $("#errorMessage").text("Please choose a file.");
                 }
             });
+
             $(".delete-document").click(function () {
                 var documentId = $(this).data("document-id");
                 $("#deleteDocumentModal").data("document-id", documentId);
@@ -234,7 +255,6 @@
                     },
                     success: function (response) {
                         if (response.success) {
-                            // Reload the page or remove the deleted row from the table
                             location.reload();
                         } else {
                             alert("Delete failed.");
@@ -249,6 +269,7 @@
             });
 
         });
+
     </script>
 </body>
 
