@@ -221,6 +221,24 @@ def download_document(request, file_name):
         return HttpResponseNotFound("File not found")
 
 
+def delete_document(request):
+    if request.method == 'POST':
+        document_id = request.POST.get('document_id')
+        if document_id:
+            try:
+                document = Documents.objects.get(pk=document_id)
+                
+                file_path = os.path.join('fileupload', document.document_name)
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                
+                document.delete()
+                
+                return JsonResponse({'success': True})
+            except Documents.DoesNotExist:
+                pass
+
+    return JsonResponse({'success': False})
 
 
 def index(request):

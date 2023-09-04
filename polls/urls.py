@@ -13,5 +13,6 @@ urlpatterns = [
     path('documents/', views.document_page, name='document_page'),
     path('document/upload/', views.upload_document, name='upload_document'),
     path('document/download/<str:file_name>/', views.download_document, name='download_document'),
+    path('document/delete/', views.delete_document, name='delete_document'),
 
 ]
