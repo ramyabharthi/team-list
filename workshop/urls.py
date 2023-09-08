@@ -18,9 +18,11 @@ from django.contrib import admin
 from django.urls import include, path
 from polls.views import login
 
+
 urlpatterns = [
     path("polls/", include("polls.urls")),
     path("admin/", admin.site.urls),
-    path('login/', login),
+    path("login/", include("polls.urls")),
+    path('notes/', include('notes.urls')),  # Include the 'notes' app's URLs
 
 ]
